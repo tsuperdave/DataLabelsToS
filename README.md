@@ -7,7 +7,7 @@ For most labels will show Red/Green depending on +- values or above certain thre
 
 TODOS:  
 
-Verify rVol calculations (may compare to FinViz screener).  
+Verify rVol calculations (may compare to FinViz screener).  ****Extended hours needs to be enabled.  
 Code cleanup.  
 
 #nfg
