@@ -6,7 +6,7 @@ declare once_per_bar;
 input dAvgVolLen = 30;
 input dRVolLen = 10;
 input rVolThreshold = 3;
-input atrCalc = 14;
+input atrCalc = 15;
 #defs
 def isCurrentDay = GetDay() == GetLastDay();
 def averageType = AverageType.WILDERS;
