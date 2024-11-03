@@ -16,7 +16,7 @@ def roundedDVol = Round(dVol / 1000000, 2);
 def roundedDAvgVol = Round(avgVol / 1000000, 2);
 def atr =  if isCurrentDay then MovingAverage(averageType, TrueRange(high(period = "DAY")[1], close(period = "DAY")[1], low(period = "DAY")[1]), atrCalc) else Double.NaN;
 def tickData = hlc3(symbol = "$TICK");
-def addData = hlc3(symbol = "$ADD");
+def addData = Round(hlc3(symbol = "$ADD"), 0);
 def vix = close(symbol = "VIX");
 def dxy = close(symbol = "$DXY");
 def vold = close(symbol = "$VOLD");
@@ -98,3 +98,16 @@ AddLabel(yes, "I/O M", if isInsideMonth then Color.gray else color.LIGHT_GREEN);
 Alert(Crosses(close, vwap, CrossingDirection.ABOVE), "VWAP CROSS UP");
 Alert(Crosses(close, vwap, CrossingDirection.BELOW), "VWAP CROSS DOWN");
 #-------------------------------------------------
+def isRollover = ymd != ymd[1];
+def beforeStart = GetTime() < RegularTradingStart(ymd);
+def vol = if isRollover and beforeStart then dVol else if beforeStart then vol[1] + dVol else Double.NaN;
+def PMV = if IsNaN(vol) then PMV[1] else vol;
+def AV = AggregationPeriod.DAY;
+def x = Average(Volume(period=AV)[1],10) * 100;
+def y1 = Round((PMV/x),2);
+def L = Lg(y1);
+def p = if L>=1 then 0 else if L>=0 then 1 else 2;
+def y2 = Round(y1,p);
+def z = y2;
+
+AddLabel(yes, "V1 RVOL: " + z, if z >= 3 then color.light_green else if z >= 6 then color.green else color.gray);
