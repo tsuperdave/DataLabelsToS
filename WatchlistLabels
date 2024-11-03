@@ -1,0 +1,83 @@
+#OpenChg------------
+def openPrice = if SecondsTillTime(830) == 0 then open else openPrice[1];
+def pctChangeFromOpen = (close - OpenPrice) / OpenPrice;
+AddLabel(yes, AsPercent(pctChangeFromOpen), color.black);
+AssignBackgroundColor(if pctChangeFromOpen > 0 then color.green else color.red);
+
+#RVol-------------
+def isRollover = GetYYYYMMDD() != GetYYYYMMDD()[1];
+def beforeStart = GetTime() < RegularTradingStart(GetYYYYMMDD());
+def vol = if isRollover and beforeStart then volume else if beforeStart then vol[1] + volume else Double.NaN;
+def PMV = if IsNaN(vol) then PMV[1] else vol;
+def AV = AggregationPeriod.DAY;
+def x = Average(Volume(period=AV)[1],10);
+def y1 = Round((PMV/x),2);
+def L = Lg(y1);
+def p = if L>=1 then 0 else if L>=0 then 1 else 2;
+def y2 = Round(y1,p);
+plot z = y2;
+z.assignValueColor(if z>=6 then createcolor(50,255,50) else if z>=3 then createcolor(85,150,100) else createcolor(255,153,153));
+
+#D.V.-------------------
+def price = close[1];
+def vwap = VWAP(period = "DAY");
+def bullish = price > vwap;
+def bearish = price < vwap;
+AddLabel(bullish, “ ”, color.black);
+AddLabel(bearish, “ ”, color.black);
+AddLabel(!bullish and !bearish, " ", color.black);
+AssignbackgroundColor(if bullish then color.green else if bearish then color.red else color.black);
+
+#5D ATR-----------------------
+def atrCalc = 5;
+def isCurrentDay = GetDay() == GetLastDay();
+def averageType = AverageType.WILDERS;
+plot atr =  if isCurrentDay then MovingAverage(averageType, TrueRange(high(period = "DAY")[1], close(period = "DAY")[1], low(period = "DAY")[1]), atrCalc) else Double.NaN;
+def isAtrGood = atr > 0.8;
+AddLabel(yes, atr, color.black);
+AssignBackgroundColor(if isAtrGood then Color.GREEN else Color.GRAY);
+
+#D Vol---------------
+def dAvgVolLen = 30;
+def dVol = volume(period = "DAY");
+def avgVol = Average(dVol, dAvgVolLen);
+def roundedDVol = Round(dVol / 1000000, 2);
+def isVolGood = dVol && avgVol > 1;
+def isVolSoSo = dVol && avgVol > 0.6;
+AddLabel(yes, roundedDVol + "m", if isVolGood then Color.GREEN else if isVolSoSo then Color.GRAY else Color.RED);
+
+#30D Vol---------------
+def dAvgVolLen = 30;
+def dVol = volume(period = "DAY");
+def avgVol = Average(dVol, dAvgVolLen);
+def roundedDAvgVol = Round(avgVol / 1000000, 2);
+def isVolGood = dVol && avgVol > 1;
+def isVolSoSo = dVol && avgVol > 0.6;
+AddLabel(yes, roundedDAvgVol + "m", if isVolGood then Color.GREEN else if isVolSoSo then Color.GRAY else Color.RED);
+
+#IV--------------------
+def removeBadTicks = yes;
+def badTickFilter = 3.0;
+def days = 252;
+def upperRange = 20;
+def midUpperRange = 40;
+def midLowerRange = 40;
+def lowerRange = 20;
+def iv = round(impVolatility() * 100);
+def highIV = Highest(iv, days);
+def lowIV = Lowest(IV, 252);
+def upperPct = upperRange / 100;
+def midUpperPct = midUpperRange / 100;
+def midLowerPct = midLowerRange / 100;
+def lowerPct = lowerRange / 100;
+def yearlyRange = highIV - lowIV;
+def upperPlot = highIV - yearlyRange * upperPct;
+def midUpperPlot = highIV - yearlyRange * midUpperPct;
+def midLowerPlot = lowIV + yearlyRange * midLowerPct;
+def lowerPlot = lowIV + yearlyRange * lowerPct;
+def ivLow = iv <= midlowerPlot;
+def ivElevated = iv >= midLowerPlot and iv <= midUpperPlot;
+def ivHigh = iv > midUpperPlot;
+
+AddLabel(yes, iv, color.black);
+AssignBackgroundColor(if ivlow then color.green else if ivElevated then color.LIGHT_ORANGE else if ivHigh then color.red else color.gray);
