@@ -1,0 +1,100 @@
+#-------------------------------------------
+# tick/addChartBubble for SPX is tiksp and adspd
+declare lower;
+declare once_per_bar;
+#inputs
+input dAvgVolLen = 30;
+input dRVolLen = 10;
+input rVolThreshold = 3;
+input atrCalc = 14;
+#defs
+def isCurrentDay = GetDay() == GetLastDay();
+def averageType = AverageType.WILDERS;
+def dVol = volume(period = "DAY");
+def avgVol = Average(dVol, dAvgVolLen);
+def roundedDVol = Round(dVol / 1000000, 2);
+def roundedDAvgVol = Round(avgVol / 1000000, 2);
+def atr =  if isCurrentDay then MovingAverage(averageType, TrueRange(high(period = "DAY")[1], close(period = "DAY")[1], low(period = "DAY")[1]), atrCalc) else Double.NaN;
+def tickData = hlc3(symbol = "$TICK");
+def addData = hlc3(symbol = "$ADD");
+def vix = close(symbol = "VIX");
+def dxy = close(symbol = "$DXY");
+def vold = close(symbol = "$VOLD");
+def volspd = close(symbol = "$VOLSPD");
+def cumulativeTickValue = if SecondsTillTime(930) < 0 and SecondsTillTime(1600) > 0 then tickData + cumulativeTickValue[1] else 0;
+def roundedTick = Round(cumulativeTickValue, 0);
+def rawRelVol = (volume - Average(volume, dRVolLen)) / StDev(volume, dRVolLen);
+def dRVolVal = (dVol - Average(dVol, dRVolLen)) / StDev(dVol, dRVolLen);
+def volumeSum;
+def volumeVwapSum;
+def ymd = GetYYYYMMDD();
+def isNewDay  = !IsNaN(close) and ymd != ymd[1];
+def dayCount = CompoundValue(1, if isNewDay then dayCount[1] + 1 else dayCount[1], 0);
+def thisDay  = (HighestAll(dayCount) - dayCount);
+def start = if thisDay == 1 and SecondsFromTime(0930) == 0 then 1 else start[1];
+def isperiodrolled = thisDay <= 1 and start;
+def dVwap = reference VWAP("time frame" = "DAY");
+def twoDVwap = volumeVwapSum / volumeSum;
+def wVwap = reference VWAP("time frame" = "WEEK");
+def mVwap = reference VWAP("time frame" = "MONTH");
+
+if !(isperiodrolled) {
+    volumeSum = volume;
+    volumeVwapSum = volume * vwap;
+} else {
+    volumeSum = CompoundValue(1, volumeSum[1] + volume, volume);
+    volumeVwapSum = CompoundValue(1, volumeVwapSum[1] + volume * vwap, volume * vwap);
+}
+
+def v = if IsNaN(reference VWAP("time frame" = "DAY")) then v[1] else twoDVwap;
+def vwap2day = if isperiodrolled then v else double.nan;
+
+def prevDayLow = low("period" = "DAY")[1];
+def prevDayHigh = high("period" = "DAY")[1];
+def prevWeekLow = low("period" = "WEEK")[1];
+def prevWeekHigh = high("period" = "WEEK")[1];
+def prevMonthLow = low("period" = "MONTH")[1];
+def prevMonthHigh = high("period" = "MONTH")[1];
+def percVolChg = ((dVol - avgVol) / avgVol);
+def posVolChange = percVolChg > 0;
+def openPrice = if SecondsTillTime(930) == 0 then open else openPrice[1];
+def pctChangeFromOpen = (close - OpenPrice) / OpenPrice;
+# bools
+def isAtrGood = atr > 0.8;
+def isVolGood = dVol && avgVol > 1;
+def isVolSoSo = dVol && avgVol > 0.6;
+def isTickPos = cumulativeTickValue > 0;
+def isAddOpt = addData >= 1800;
+def isAddExt = addData >= 2000;
+def isNegAddOpt = addData <= -1800;
+def isNegAddExt = addData <= -2000;
+def isVoldPos = vold > 0;
+def isVolspdPos = volspd > 0;
+def isInsideDay = close < prevDayHigh and close > prevDayLow;
+def isInsideWeek = close < prevWeekHigh and close > prevWeekLow;
+def isInsideMonth = close < prevMonthHigh and close > prevMonthLow;
+
+#------LABELS------
+AddLabel(yes, "VIX: " + vix, Color.YELLOW);
+AddLabel(yes, "DXY: " + dxy, Color.YELLOW);
+AddLabel(yes, "% Off Open: " + AsPercent(pctChangeFromOpen), if pctChangeFromOpen > 0 then color.light_green else color.pink);
+AddLabel(yes, "TICK: " + roundedTick, if isTickPos then Color.LIGHT_GREEN else Color.PINK);
+AddLabel(yes, "ADD: " + addData, if isAddExt then Color.GREEN else if isAddOpt then Color.UPTICK else if addData > 0 then Color.LIGHT_GREEN else if isNegAddExt then Color.RED else if isNegAddOpt then Color.DOWNTICK else if addData < 0 then Color.PINK else Color.GRAY);
+AddLabel(yes, "VOLD: " + vold, if isVoldPos then Color.LIGHT_GREEN else Color.PINK);
+AddLabel(yes, "VOLSPD: " + volspd, if isVolspdPos then Color.LIGHT_GREEN else Color.PINK);
+AddLabel(yes, "D Vol: " + roundedDVol + "m", if isVolGood then Color.GREEN else if isVolSoSo then Color.GRAY else Color.RED);
+AddLabel(yes, dAvgVolLen + "D Vol Avg: " + roundedDAvgVol + "m", if isVolGood then Color.GREEN else if isVolSoSo then Color.GRAY else Color.RED);
+AddLabel(yes, "% Vol Change: " + AsPercent(percVolChg), if posVolChange then Color.GREEN else Color.RED);
+AddLabel(yes, atrCalc + "D ATR: " + atr, if isAtrGood then Color.GREEN else Color.GRAY);
+#AddLabel(yes, dRVolVal, Color.CYAN);
+AddLabel(yes, "D VWAP", if close > dVwap then Color.LIGHT_GREEN else if close < dVwap then Color.PINK else Color.GRAY);
+AddLabel(yes, "2D VWAP", if close > vwap2day then Color.LIGHT_GREEN else if close < vwap2day then Color.PINK else Color.GRAY);
+AddLabel(yes, "W VWAP", if close > wVwap then Color.LIGHT_GREEN else if close < wVwap then Color.PINK else Color.GRAY);
+AddLabel(yes, "M VWAP", if close > mVwap then Color.LIGHT_GREEN else if close < mVwap then Color.PINK else Color.GRAY);
+AddLabel(yes, "I/O D", if isInsideDay then Color.gray else color.LIGHT_GREEN);
+AddLabel(yes, "I/O W", if isInsideWeek then Color.gray else color.LIGHT_GREEN);
+AddLabel(yes, "I/O M", if isInsideMonth then Color.gray else color.LIGHT_GREEN);
+
+Alert(Crosses(close, vwap, CrossingDirection.ABOVE), "VWAP CROSS UP");
+Alert(Crosses(close, vwap, CrossingDirection.BELOW), "VWAP CROSS DOWN");
+#-------------------------------------------------
