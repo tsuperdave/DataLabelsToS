@@ -32,7 +32,8 @@ AssignbackgroundColor(if bullish then color.green else if bearish then color.red
 def atrCalc = 5;
 def isCurrentDay = GetDay() == GetLastDay();
 def averageType = AverageType.WILDERS;
-plot atr =  if isCurrentDay then MovingAverage(averageType, TrueRange(high(period = "DAY")[1], close(period = "DAY")[1], low(period = "DAY")[1]), atrCalc) else Double.NaN;
+def atrVal=  if isCurrentDay then MovingAverage(averageType, TrueRange(high(period = "DAY")[1], close(period = "DAY")[1], low(period = "DAY")[1]), atrCalc) else Double.NaN;
+def atr = Round(atrVal, 2);
 def isAtrGood = atr > 0.8;
 AddLabel(yes, atr, color.black);
 AssignBackgroundColor(if isAtrGood then Color.GREEN else Color.GRAY);
