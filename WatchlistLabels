@@ -1,4 +1,5 @@
 #OpenChg------------
+# tracks % price change off open
 def openPrice = if SecondsTillTime(830) == 0 then open else openPrice[1];
 def pctChangeFromOpen = (close - OpenPrice) / OpenPrice;
 AddLabel(yes, AsPercent(pctChangeFromOpen), color.black);
@@ -19,6 +20,7 @@ plot z = y2;
 z.assignValueColor(if z>=6 then createcolor(50,255,50) else if z>=3 then createcolor(85,150,100) else createcolor(255,153,153));
 
 #D.V.-------------------
+# Tracks if price is above or below
 def price = close[1];
 def vwap = VWAP(period = "DAY");
 def bullish = price > vwap;
@@ -29,6 +31,7 @@ AddLabel(!bullish and !bearish, " ", color.black);
 AssignbackgroundColor(if bullish then color.green else if bearish then color.red else color.black);
 
 #5D ATR-----------------------
+#5 day ATR value. If elevated will highlight
 def atrCalc = 5;
 def isCurrentDay = GetDay() == GetLastDay();
 def averageType = AverageType.WILDERS;
@@ -39,6 +42,7 @@ AddLabel(yes, atr, color.black);
 AssignBackgroundColor(if isAtrGood then Color.GREEN else Color.GRAY);
 
 #D Vol---------------
+# Current daily volume
 def dAvgVolLen = 30;
 def dVol = volume(period = "DAY");
 def avgVol = Average(dVol, dAvgVolLen);
@@ -48,6 +52,7 @@ def isVolSoSo = dVol && avgVol > 0.6;
 AddLabel(yes, roundedDVol + "m", if isVolGood then Color.GREEN else if isVolSoSo then Color.GRAY else Color.RED);
 
 #30D Vol---------------
+# 30 day average volume
 def dAvgVolLen = 30;
 def dVol = volume(period = "DAY");
 def avgVol = Average(dVol, dAvgVolLen);
@@ -57,6 +62,7 @@ def isVolSoSo = dVol && avgVol > 0.6;
 AddLabel(yes, roundedDAvgVol + "m", if isVolGood then Color.GREEN else if isVolSoSo then Color.GRAY else Color.RED);
 
 #IV--------------------
+# tracks IV over year and marks if low, elevated or high
 def removeBadTicks = yes;
 def badTickFilter = 3.0;
 def days = 252;
